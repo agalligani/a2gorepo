@@ -1,0 +1,178 @@
+<?php
+
+/*
+ *	hook_menu
+ */
+
+function trip_wizard_menu() {
+
+$items = array();
+
+$items['trip_wizard'] = array(
+	'title' => 'Build Your Trip',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('form_example_wizard'),
+	'access callback' => 'trip_wizard_access',
+	'file' => 'trip_wizard.inc',
+	'type' => MENU_NORMAL_ITEM,
+	);
+	
+	
+$items['trip_wizard_prepackage/%/%'] = array(
+	'title' => '>>>',
+//	'page callback' => 'drupal_get_form',
+//	'page arguments' => array('form_example_wizard'),
+	'page callback' => 'trip_prepackage',
+	'page arguments' => array(1,2),
+	'access callback' => 'trip_wizard_access',
+	'file' => 'trip_wizard.inc',
+	'type' => MENU_NORMAL_ITEM,
+	);
+
+$items['trip_wizard_prod_list'] = array(
+	'title' => 'Build Your Trip',
+	'page callback' => 'drupal_get_form',
+//	'page arguments' => array('prod_list'),
+	'page arguments' => array('add_trip_to_cart'),
+	'access callback' => 'trip_wizard_access',
+//	'file' => 'trip_wizard.inc',
+	'type' => MENU_NORMAL_ITEM,
+	);
+
+
+//$items[] = array();
+
+return $items;
+
+}
+
+
+function trip_prepackage($base, $package_type) {
+
+$result = db_query('select tid, vid, name, description from taxonomy_term_data where vid in (select vid from taxonomy_vocabulary where name = \'Base\') and tid = :tid', array('tid'=>$base));
+foreach($result as $loc) {
+	$loc_name = $loc->name;
+}
+
+$result = db_query('select tid, vid, name, description from taxonomy_term_data where vid in (select vid from taxonomy_vocabulary where name = \'Package Type\') and tid = :tid', array('tid'=>$package_type));
+foreach($result as $pkg) {
+	$pkg_type = $pkg->name;
+}
+
+//select nid, title from node where type = 'product' and nid in (select pkg_type.nid from taxonomy_index as loc, taxonomy_index as pkg_type where loc.tid = 34 and pkg_type.tid = 32 and pkg_type.nid = loc.nid);
+
+$result = db_query('select nid, title from node where type = \'product\' and nid in (select pkg_type.nid from taxonomy_index as loc, taxonomy_index as pkg_type where loc.tid = 34 and pkg_type.tid = 32 and pkg_type.nid = loc.nid)');
+
+$options = array();
+	foreach($result as $package) {
+		$options[$package->nid] = $package->title;  		
+	}
+
+
+$page = array();
+	$page['text1'] = array(
+	
+	'#type' => 'markup',
+	'#markup' => '<h3>'.$loc_name.' - "'.$pkg_type.'" Themed Packages</h3>',
+	); 
+	
+	$page['packages'] = array(
+	'#title' => 'Package Choices',	
+	'#type' => 'markup',
+	'#markup' => implode($options,'<br/>'),
+	); 
+	
+
+
+return $page;
+	
+}
+
+function add_trip_to_cart($form, &$form_state, $base, $package_type) {
+	
+	$form = array();
+	
+	$options = array();
+	
+	$result = db_query('select uc.vid, uc.nid, n.title, uc.model, uc.list_price, uc.cost, uc.sell_price from {uc_products} as uc, {node} as n where n.nid = uc.nid');
+	foreach ($result as $node) {
+		$options[$node->nid] = $node->title; 		
+	}	
+
+	
+	
+	$form['item'] =	 array(
+		'#type' => 'markup',
+		'#markup' => '<h3>Trip Selection Page</h3>', 
+	);
+	
+			$form['package'] =	 array(
+			'#title' => 'Start/End location',
+  			'#description' => 'Choose the package.',
+			'#type' => 'radios',
+			'#options' => $options,
+		);
+
+
+			$form['new_price'] =	 array(
+			'#title' => 'New Price of Product',
+  			'#description' => 'Choose the new price.',
+			'#type' => 'radios',
+			'#options' => array(400=>400, 300 => 300, 600=>600),
+			
+		);
+
+
+			$form['submit'] =	 array(
+			'#title' => 'add to cart',
+			'#value' => 'add to cart',
+			'#type' => 'submit',
+			);	
+	
+	return $form;
+}
+
+
+
+function add_trip_to_cart_submit($form, &$form_state) {
+	
+	global $user;
+	
+	$nid = $form_state['values']['package'];
+//	dsm($form_state['values']['new_price']);
+	
+	$prod = node_load($nid);
+	trip_wizard_node_view($prod);
+//    $prod->sell_price = '50000';
+    
+//    node_save($prod);
+	
+//	dsm($prod);
+		
+	$cid = $user->uid;
+	
+	uc_cart_add_item($nid, $qty = 1, $data = NULL, $cid, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+	
+	drupal_goto('/cart');
+}
+
+
+function trip_wizard_access() {
+	return TRUE;
+
+}
+
+
+
+/**
+* Implements hook_node_view().
+*/
+function trip_wizard_node_view($node) {
+ //   $item = clone $node;
+ //   $item->price = $node->sell_price;
+//    $node->content['sell_price']['#value']    = 20000;
+//    $node->content['display_price']['#value'] = 20000;
+	 	$node->content['days']['#value'] = '111111111';
+  	 	$node->content['body']['#value'] = '111111111';
+  
+}

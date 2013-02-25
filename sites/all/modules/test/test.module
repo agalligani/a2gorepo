@@ -1,0 +1,25 @@
+<?php
+
+function test_init() {
+}
+
+function test_menu() {
+
+$items = array();
+
+$items['testlink'] = array(
+	'page callback' => 'test_page',
+	'access callback' => TRUE,
+	'type' => MENU_NORMAL_ITEM,
+);
+
+return $items;
+}
+
+function test_page() {
+
+
+$page = '<div id="target_div">hi</div>'; 
+
+return $page;
+}

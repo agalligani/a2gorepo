@@ -1,0 +1,6 @@
+name = tripper
+description = module for trip planning and tracking
+version = 1.0
+core = 7.x
+package = tripper
+

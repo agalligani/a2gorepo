@@ -1,0 +1,4 @@
+name = dayblocks
+description = "Adds blocks for each day of an itinerary"
+package = tripper
+core = 7.x

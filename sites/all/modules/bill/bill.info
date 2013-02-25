@@ -1,0 +1,4 @@
+name = bill
+description = test of module to create an order
+package = tripper
+core = 7.x

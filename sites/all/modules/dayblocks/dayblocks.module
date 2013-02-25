@@ -1,0 +1,167 @@
+<?php
+/*
+ * Implements hook_menu()
+ */
+function dayblocks_menu() {
+	$items = array();
+	
+	$items['day/%/%'] = array(
+	  'title' => 'Itinerary',
+      'access arguments' => array('access content'),
+      'page callback' => 'dayblocks_default_page',
+      'page arguments' => array(1,2),
+      'type' => MENU_CALLBACK,
+      'file' => 'dayblocks.pages.inc',	
+	);
+	
+	return $items;
+
+}
+
+
+
+
+
+
+function dayblocks_block_info() {
+
+  $blocks['dayblocks'] = array(
+      'info' => t('[dayblocks] Block of Days'),
+          // DRUPAL_CACHE_PER_ROLE will be assumed.
+  );
+
+  return $blocks;
+}
+
+function dayblocks_block_view($delta = '') {
+$block = array();
+
+
+  switch ($delta) {
+
+    case 'dayblocks':	
+
+	
+	$tripnid = arg(1);  // arg(1) - the second position of the URL
+	$tripnode = node_load($tripnid);
+	$trip_number = $tripnode->model;	
+	
+	if(empty($tripnode)) { return;}	
+	
+	
+	
+	$language = $tripnode->language;
+	$start_date = $tripnode->field_start_date[$language][0]['value'];
+	$start_date_stamp = strtotime($start_date);	
+	$trip_length = $tripnode->field_number_of_days[$language][0]['value'];
+	$days = array();
+
+	// grab the nids for the specified destinations for each day of the trip
+	$dest_nids = array();
+	
+	for($i = 1; $i<=$trip_length; $i++) {
+		
+ 	  $days[$i] = mktime(0,0,0,date("m",$start_date_stamp),date("d",$start_date_stamp)+$i,date("Y",$start_date_stamp));	
+	  $dest_nids[$i] = dayblocks_query($trip_number, $i);	
+ 	}
+      $node_limit = 200;
+      $content_type = 'destination';
+
+
+      if (!empty($days)) {
+        $block['content'] = array(
+            '#theme' => 'dayblocks',
+            '#days' => $days,
+            '#title' => dayblocks_get_title($delta),
+            '#model' => $tripnode->model,
+            '#tripnid' => $tripnid,
+            '#nids' => $dest_nids,
+        );
+
+	      }
+
+      break;
+  }
+  return $block;
+}
+
+function dayblocks_theme($existing, $type, $theme, $path) {
+
+   return array(
+         'dayblocks_page' => array(
+          'variables' => array('trip' => NULL, 'nodes' => NULL),
+          'template' => 'dayblocks_page',
+      ),
+   
+       'dayblocks' => array(
+           'variables' => array('days' => NULL, 'title' => NULL, 'model'=> NULL,'tripnid' => NULL, 'nids' => NULL),
+           'template' => 'dayblocks',
+       ),
+  	);
+}
+
+
+// function dayblocks_theme($existing, $type, $theme, $path) {
+//   return array(
+//       'dayblocks_page' => array(
+//           'variables' => array('parent' => NULL, 'nodes' => NULL),
+//           'template' => 'dayblocks_page',
+//       ),
+//   );
+// }
+
+
+
+
+function dayblocks_get_title($delta) {
+  $block = db_query('SELECT title FROM {block} WHERE delta = :delta', array(':delta' => $delta))->fetchObject();
+
+  return $block->title ? $block->title : '';
+}
+
+
+function taxonomy_node_get_terms($node, $key = 'tid') {
+static $terms;
+  if (!isset($terms[$node->vid][$key])) {
+    $query = db_select('taxonomy_index', 'r');
+    $t_alias = $query->join('taxonomy_term_data', 't', 'r.tid = t.tid');
+    $v_alias = $query->join('taxonomy_vocabulary', 'v', 't.vid = v.vid');
+    $query->fields( $t_alias );
+    $query->condition("r.nid", $node->nid);
+    $result = $query->execute();
+    $terms[$node->vid][$key] = array();
+    foreach ($result as $term) {
+      $terms[$node->vid][$key][$term->$key] = $term;
+      }
+  }
+return $terms[$node->vid][$key];
+}
+
+
+function dayblocks_query($trip, $day = NULL) {
+
+
+        $query = db_select('node', 'n')->extend('PagerDefault');
+        $query->leftJoin('field_data_field_trip_number', 'trip_number', 'n.nid = trip_number.entity_id');
+        $query->leftJoin('field_data_field_day_number', 'day_number', 'n.nid = day_number.entity_id');
+//        $query->leftJoin('taxonomy_index','ti', 'n.nid = ti.nid');
+
+        $query
+                ->fields('n', array('nid', 'sticky', 'created'))
+                ->condition('trip_number.field_trip_number_value', $trip)
+                ->condition('n.type', 'destination')
+                ->condition('n.status', 1);
+
+		if($day) { $query->condition('day_number.field_day_number_value', $day); }
+                
+        $nids = $query
+                ->orderBy('n.sticky', 'DESC')
+                ->orderBy('n.created', 'ASC')
+                ->limit(100)
+                ->addTag('node_access')
+                ->execute()
+                ->fetchCol();
+                
+                return $nids;       
+            }
+         

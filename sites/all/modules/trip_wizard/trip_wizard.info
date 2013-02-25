@@ -1,0 +1,8 @@
+name = 'Trip wizard'
+description = 'Trip wizard for Airstream2Go'
+version = 1.0 beta
+core = 7.x
+package = tripper
+files[] = trip_wizard.inc
+files[] = trip_wizard_steps.inc
+

@@ -1,0 +1,88 @@
+<?php
+/*
+ * hook_init
+ */ 
+ 
+function tripper_init() {
+  
+//  This it the Google API Key (not necessary)
+	$key = 'AIzaSyAMsriR8L3KWMvX2TyLkcYACw9mGvpxGWY';
+// 		 drupal_add_js(drupal_get_path('module','tripper').'/js/router.js');
+	 drupal_add_js(drupal_get_path('module','tripper').'/js/location.js');
+
+ 	 drupal_add_js('http://maps.googleapis.com/maps/api/js?key='.$key.'&sensor=false', 'external');
+	 drupal_add_css(drupal_get_path('module','tripper').'/css/style.css');
+	}
+
+function tripper_menu() {
+	$items = array();
+	
+	
+	$items['tripper/%/%'] = array(
+		'title' => 'Add Destinations',
+// 		'page callback' => 'drupal_get_form',
+// 		'page arguments' => array('trip_planner'),
+		'page callback' => 'tripper_itinerary',
+		'page arguments' => array(1,2),
+		'access callback' => 'tripper_access',
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'tripper.inc',
+	);
+	
+
+	$items['admin/structure/tripper'] = array(
+		'title' => 'Add locations to the tripper module',
+// 		'page callback' => 'drupal_get_form',
+// 		'page arguments' => array('trip_planner'),
+		'page callback' => 'tripper_admin_page',
+		'page arguments' => array(),
+		'access callback' => 'tripper_access',
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'tripper.admin.inc',
+	);
+	
+		
+// 	
+// 	$items['tripper/%/destinations'] = array(
+// 		'title' => 'Add a Destination',
+// // 		'page callback' => 'drupal_get_form',
+// // 		'page arguments' => array('trip_planner'),
+// 		'page callback' => 'tripper_itinerary',
+// 		'page arguments' => array(1),
+// 		'access callback' => 'tripper_access',
+// 		'type' => MENU_LOCAL_TASK,
+// 		'file' => 'tripper.inc',
+// 	);
+// 
+//  
+//  	$items['tripper/%/itinerary'] = array(
+// 		'title' => 'Manage Itinerary',
+// //  		'page callback' => 'drupal_get_form',
+// 		'page callback' => 'tripper_itinerary',
+// 		'page arguments' => array(1),
+// 		'access callback' => 'tripper_access',
+//  		'type' => MENU_LOCAL_TASK,
+//  		'file' => 'tripper.inc',
+//  	);
+// 
+//  	$items['tripper/%/route'] = array(
+//  			'title' => 'Preview Route',
+// //  		'page callback' => 'drupal_get_form',
+// 		'page callback' => 'tripper_itinerary',
+// 		'page arguments' => array(1),
+// 		'access callback' => 'tripper_access',
+//  		'type' => MENU_LOCAL_TASK,
+//  		'file' => 'tripper.inc',
+//  	);
+
+ 	
+ 	 	
+	return $items;
+
+}
+
+
+
+function tripper_access() {
+	return TRUE;
+}

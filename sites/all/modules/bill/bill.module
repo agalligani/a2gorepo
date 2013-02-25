@@ -1,0 +1,117 @@
+<?php
+
+
+// 
+
+function bill_menu() {
+  $items = array();
+  $items['createorder/%/%'] = array(
+    'title' => t('Bill Order'),
+    'page callback' => 'bill_create_order',
+    'page arguments' => array(1,2),
+    'title' => 'Bill',
+    'access arguments' => array('access content'),    
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+function bill_create_order($uid, $cnode) {
+  
+    if ($uid != '' && $cnode != '') {
+      $user = user_load($uid);
+      $leadNode = node_load($cnode);
+      
+      //Get the taxonomy to identify what product needs to be inserted in the order.
+      $productId = getProductId($leadNode);
+
+      $productNode = node_load($productId);
+      $product = uc_product_load($productNode);
+      //watchdog('bill',print_r($product));
+      if (!$product)
+        $error_msg = 'There was an error finding the free trial product. Please contact an administrator.';      
+        $product->qty = 1;
+        $product->title = $productNode->title;      
+        $product->nid = $productNode->nid;
+        $product->price = $productNode->sell_price;
+    
+      // Create the order and gather user information
+      $order = uc_order_new($user->uid, 'pending');
+      $order_id = $order->order_id;
+
+      // Populate the order
+      $addresses = uc_get_addresses($user->uid);
+      foreach ($addresses as $address) {
+        $first_name = $address['first_name'];
+        $last_name = $address['last_name'];
+        $company = $address['company'];
+        $phone = $address['phone'];
+        $city = $address['city'];        
+        $street1 = $address['street1'];
+        $street2 = $address['street2'];
+        $postal_code = $address['postal_code'];  
+        $zone = $address['zone'];        
+        $country = $address['country'];                                               
+      }
+     // watchdog('bill',print_r($address,TRUE));       
+      if (!isset($order->primary_email))
+        $order->primary_email = $email;
+      $order->billing_first_name = $first_name;
+      $order->billing_last_name = $last_name;
+      $order->billing_company = $company;
+      $order->billing_phone = $phone;
+      $order->billing_city = $city;       
+      $order->billing_street1 = $street1;        
+      $order->billing_street2 = $street2;
+      $order->billing_postal_code = $postal_code;
+      $order->billing_zone = $zone;          
+      $order->billing_country = $country;        
+                                
+      if (!$user->uid)
+        $order->data['new_user']['pass'] = $form_state['values']['password'];
+      $order->products[] = $product;
+      uc_order_save($order);
+      $order = uc_order_load($order_id); 
+      
+      drupal_goto('admin/store/orders/'.$order->order_id.'/edit');    
+    }
+  }
+
+function getProductId($node) {
+  foreach($node->taxonomy as $term) {
+    if ($term->vid == 90) {
+      $tid = $term->tid;
+    }
+  }  
+  /*
+  Product ID Map
+  1416 - product 1
+  1417 - product 2
+  1418 - product 3
+  1419 - product 4
+  1420 - product 5
+  1421 - product 6
+  */
+  switch ($tid) {
+    case '120':
+      $type = 1416;
+    break;
+    case '162':
+      $type = 1417 ;
+    break;
+    case '155':
+      $type = 1418 ;
+    break;  
+    case '122':
+      $type = 1419 ;
+    break;  
+    case '121':
+      $type = 1420 ;
+    break;  
+    case '168':
+      $type = 1421 ;
+    break;  
+  }
+  return $type;
+}

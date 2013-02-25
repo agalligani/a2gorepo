@@ -1,0 +1,4 @@
+name = test
+description = testing jquery
+core = 7.x
+scripts[] = js/test.js

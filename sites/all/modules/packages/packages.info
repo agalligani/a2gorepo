@@ -1,0 +1,4 @@
+name = Packages page
+description = Packages page
+core = 7.x
+package = tripper
