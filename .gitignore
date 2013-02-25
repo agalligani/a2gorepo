@@ -5,6 +5,4 @@ sites/*/settings*.php
 sites/*/files
 sites/*/private
 
-# Ignore huge blob in location file
-
 sites/all/modules/location/*
